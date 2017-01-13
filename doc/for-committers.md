@@ -39,6 +39,14 @@ Allows us to build cross platfrom desktop apps. See [Electron guide](electron-gu
 
 ## Other
 
+### Running Light Table Code in Light Table
+
+Generally, and unless you know what you're doing, do *not* eval entire files of the Light Table source; eval individual forms.
+
+As Gabriel explains in [this comment](https://github.com/LightTable/LightTable/issues/2170#issuecomment-201835808) in [issue #2170](https://github.com/LightTable/LightTable/issues/2170):
+
+> Depending on the file you're re-evaling, a whole file re-eval often redefines core LT object types and recreates LT objects. This can have dire consequences in some files e.g. re-evaling object.cljs will freeze LT as LT no longer has any objects defined. In the case of editor.cljs, if you comment the editor object type and do a file re-eval, you don't see errors. My suggestion is to stick to evaling forms when exploring LT and only do a file eval as you learn more of the codebase and understand the implications of a given file eval. I can add a brief description about this in the wiki or doc/for-committers.md if you think that'd be helpful to others.
+
 ### Code Conventions
 
 * See the LightTable Style Guide.
@@ -93,3 +101,5 @@ This is our release checklist which can be dropped in to an issue:
 Run `script/build-api-docs.sh` on a clean git state to build API documentation for the current LT version and publish generated docs. Make sure there are no pending git changes as this script will change git branches and push generated API docs to gh-pages.
 
 Expect to see a ton of warnings e.g. `WARNING: Use of undeclared Var cljs.core/seq at line 197`. This will be noise we have to live with until we upgrade ClojureScript.
+
+To build documentation locally for debugging of documentation generation, run `lein with-profile doc codox`. This will create a `codox` directory within the LightTable directory. Do not include in pull requests or commits. Note, the generated documenation will not have styling, and the view source links may be incorrect.
