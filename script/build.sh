@@ -28,7 +28,7 @@ popd
 # Build the core cljs
 
 # Workaround for #1025 windows bug
-if [ "$(echo $(uname -s) | cut -c 1-9)" == "CYGWIN_NT" ]; then
+if [ "$(echo $(uname -s) | cut -c 1-9)" == "CYGWIN_NT" -o "$(echo $(uname -s) | cut -c 1-10)" == "MINGW64_NT" ]; then
   sed -i 's/:source-map/;;:source-map/' project.clj
 fi
 rm -f deploy/core/node_modules/lighttable/bootstrap.js

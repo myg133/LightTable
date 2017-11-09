@@ -29,6 +29,11 @@ elif [ "$(expr substr $(uname -s) 1 9)" == "CYGWIN_NT" ]; then
   OS="windows"
   RESOURCES="resources"
   PLATFORM_DIR="deploy/platform/win"
+  
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+  OS="windows"
+  RESOURCES="resources"
+  PLATFORM_DIR="deploy/platform/win"
 
 else
   echo "Cannot detect a supported OS."
