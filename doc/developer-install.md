@@ -34,6 +34,9 @@ The issue:
  - ["mkdir: cannot create directory" error running branch build on Windows 7 · Issue #1918 · LightTable/LightTable](https://github.com/LightTable/LightTable/issues/1918)
 
 
+In order to rebrand a build's resulting executable with the Light Table icon, you will need rcedit on your path. If rcedit is not found, it will maintain GitHub's Electron branding. There is a [pre-built release of rcedit](https://github.com/electron/rcedit/releases) on GitHub.
+
+
 ### Linux
 
 To run electron on Linux you need to have libgconf-2.so.4 installed.
@@ -66,13 +69,13 @@ line before compiling ClojureScript to get around [issue 1025](https://github.co
 Once you've built LightTable, run it in one of the following ways:
 
 * OSX
-  * As a commandline executable: `builds/lighttable-0.8.0-mac/light`
-  * As an application: `open -a $PWD/builds/lighttable-0.8.0-mac/LightTable.app`
+  * As a commandline executable: `builds/lighttable-0.8.1-mac/light`
+  * As an application: `open -a $PWD/builds/lighttable-0.8.1-mac/LightTable.app`
 * Linux
-  * As a commandline executable: `builds/lighttable-0.8.0-linux/light`
-  * As an application: `builds/lighttable-0.8.0-linux/LightTable`
+  * As a commandline executable: `builds/lighttable-0.8.1-linux/light`
+  * As an application: `builds/lighttable-0.8.1-linux/LightTable`
 * Windows
-  * As an application: `builds/lighttable-0.8.0-windows/LightTable.exe`
+  * As an application: `builds/lighttable-0.8.1-windows/LightTable.exe`
 
 You can also run LightTable with `script/light.sh`. This script allows you to
 skip running `script/build-app.sh`. While it's useful as a dev convenience,
