@@ -1,3 +1,4 @@
+/deploy/core/node_modules/
 /deploy/core/node_modules/lighttable/cljs/
 /deploy/core/node_modules/clojurescript/cljsDeps/
 /target/
@@ -11,3 +12,5 @@
 /builds/
 .idea
 *.iml
+*-lock.json
+node_modules/
