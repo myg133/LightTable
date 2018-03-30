@@ -139,7 +139,7 @@
 (defn cmd->current-binding [cmd]
   (first (filter #((-> % second set) cmd) @key-map)))
 
-(set! js/Mousetrap.handleKey
+(set! js/Mousetrap.prototype.handleKey
       (fn [key char ev]
         (when (and capturing?
                    (string? key)
@@ -147,7 +147,7 @@
           (.preventDefault ev)
           (.stopPropagation ev))))
 
-(set! js/Mousetrap.handleKeyUp
+(set! js/Mousetrap.prototype.handleKeyUp
       (fn [key char ev]
         (when (and capturing?
                    (string? key)
@@ -156,8 +156,8 @@
           (.stopPropagation ev))))
 
 (behavior ::chord-timeout
-                  :triggers #{:object.instant}
-                  :desc "App: Set the timeout for chorded shortcuts"
-                  :type :user
-                  :reaction (fn [this timeout]
-                              (set! chord-timeout timeout)))
+          :triggers #{:object.instant}
+          :desc "App: Set the timeout for chorded shortcuts"
+          :type :user
+          :reaction (fn [this timeout]
+                      (set! chord-timeout timeout)))

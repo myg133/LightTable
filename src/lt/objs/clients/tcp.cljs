@@ -5,8 +5,7 @@
             [lt.object :as object]
             [lt.objs.clients :as clients]
             [lt.objs.console :as console]
-            [clojure.string :as string]
-            [lt.util.cljs :refer [js->clj]])
+            [clojure.string :as string])
   (:require-macros [lt.macros :refer [behavior]]))
 
 (def port 0)
@@ -46,9 +45,7 @@
             next (subs buf (inc loc))
             data (try
                    (js->clj (.parse js/JSON cur) :keywordize-keys true)
-                   (catch js/Error e
-                     (console/error e))
-                   (catch js/global.Error e
+                   (catch :default e
                      (console/error e)))]
         (cb data)
         (recur (.indexOf next "\n") next))
@@ -73,23 +70,17 @@
       (.listen s 0)
       (.on s "listening" #(set! port (.-port (.address s))))
       s)
-    ;;TODO: warn the user that they're not connected to anything
-    (catch js/Error e
-      )
-    (catch js/global.Error e
-      )))
+    (catch :default e
+      (console/error "Error starting tcp server" e))))
 
 (behavior ::send!
-                  :triggers #{:send!}
-                  :reaction (fn [this msg]
-                              (send-to (:socket @this) (array (:cb msg) (:command msg) (-> msg :data clj->js)))))
+          :triggers #{:send!}
+          :reaction (fn [this msg]
+                      (send-to (:socket @this) (array (:cb msg) (:command msg) (-> msg :data clj->js)))))
 
 
 (behavior ::kill-on-closed
-                  :triggers #{:closed}
-                  :reaction (fn [app]
-                              (try
-                                (.close server)
-                                (catch js/Error e)
-                                (catch js/global.Error e))))
+          :triggers #{:closed}
+          :reaction (fn [app]
+                      (.close server)))
 

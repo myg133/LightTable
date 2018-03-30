@@ -17,6 +17,7 @@
             [lt.objs.console :as console]
             [lt.util.dom :as dom]
             [clojure.string :as string]
+            [cljs.reader :as reader]
             [lt.objs.platform :as platform])
   (:require-macros [lt.macros :refer [behavior defui]]))
 
@@ -113,7 +114,7 @@
   (try
     (reader/read-string r)
     (catch :default e
-      r)))
+      (console/error e))))
 
 (defn find-client [{:keys [origin command info key create] :as opts}]
   (let [[result client] (clients/discover command info)
@@ -381,6 +382,12 @@
                                   :when widget]
                             (object/raise widget :clear!)))
                         (object/update! this [:widgets] assoc [line :underline] res-obj))))
+
+(behavior ::copy-underline-result
+          :triggers #{:copy}
+          :reaction (fn [this]
+                      (platform/copy (string/join "\n"
+                                                  (map #(.-innerText %) (.-children (:result @this)))))))
 
 ;;****************************************************
 ;; inline exception

@@ -15,7 +15,7 @@
             [lt.util.dom :as dom])
   (:require-macros [lt.macros :refer [behavior defui]]))
 
-(defn get-all []
+(defn- get-all []
   (object/by-tag :editor))
 
 (behavior ::theme-changed
@@ -42,7 +42,9 @@
 (object/object* ::pool
                 :tags #{:editor.pool})
 
-(defn unsaved? []
+(defn unsaved?
+  "Return truthy if any editors are currently dirty/unsaved?"
+  []
   (some #(:dirty (deref %)) (object/by-tag :editor)))
 
 (defn by-path
@@ -58,20 +60,20 @@
   (let [path (string/lower-case path)]
     (filter #(> (.indexOf (-> @% :info :path (or "") string/lower-case) path) -1) (object/by-tag :editor))))
 
-(defui button [label & [cb]]
+(defui ^:private button [label & [cb]]
   [:div.button.right label]
   :click (fn []
            (when cb
              (cb))))
 
-(defn unsaved-prompt [on-yes]
+(defn- unsaved-prompt [on-yes]
   (popup/popup! {:header "You will lose changes."
                  :body "If you close now, you'll lose any unsaved changes. Are you sure you want to do that?"
                  :buttons [{:label "Discard changes"
                             :action on-yes}
                            popup/cancel-button]}))
 
-(def pool (object/create ::pool))
+(def ^:private pool (object/create ::pool))
 
 (defn last-active
   "Return current editor object (last active in pool)"
@@ -80,7 +82,7 @@
     (when (and l @l)
       l)))
 
-(defn focus-last []
+(defn- focus-last []
   (when-let [ed (last-active)]
     (when-let [ed (:ed @ed)]
       (dom/focus js/document.body)
@@ -117,28 +119,10 @@
           :reaction (fn [this]
                       (focus-last)))
 
-(defn make-transient-dirty [ed]
-  (object/merge! ed {:dirty true})
-  (object/update! ed [:info] assoc :path nil)
-  (object/remove-tags ed [:editor.file-backed])
-  (object/add-tags ed [:editor.transient]))
-
-(defn active-warn [ed popup]
-  (if-not (= (last-active) ed)
-    (object/merge! ed {:active-warn popup})
-    (popup/popup! popup)))
-
-(defn reload [ed]
-  (editor/set-val ed (:content (files/open-sync (-> @ed :info :path))))
+(defn- reload [ed]
+  (editor/set-val-and-keep-cursor ed (:content (files/open-sync (-> @ed :info :path))))
   (doc/update-stats (-> @ed :info :path))
   (object/merge! ed {:dirty false}))
-
-(behavior ::warn-on-active
-          :triggers #{:active}
-          :reaction (fn [this]
-                      (when (:active-warn @this)
-                        (popup/popup! (:active-warn @this))
-                        (object/merge! this {:active-warn nil}))))
 
 (behavior ::watched.update
           :triggers #{:watched.update}
@@ -146,25 +130,11 @@
                       (when (files/file? f)
                         (when-let [ed (first (by-path f))]
                           (when-not (doc/check-mtime (doc/->stats f) stat)
-                            (if (:dirty @ed)
-                              (active-warn ed {:header (str "File modified: " f)
-                                               :body "This file seems to have been modified outside of Light Table. Do you want to load the latest and lose your changes?"
-                                               :buttons [{:label "Reload from disk"
-                                                          :action (fn []
-                                                                    (reload ed))}
-                                                         {:label "Cancel"}
-                                                         ]})
+                            ;; If dirty no need to warn since user is warned on save
+                            (when-not (:dirty @ed)
                               (reload ed)))))))
 
-(defn warn-delete [ed f]
-  (active-warn ed {:header (str "File deleted: " f)
-                   :body "This file seems to have been deleted and we've marked it as unsaved."
-                   :buttons [{:label "Save as.."
-                              :action (fn []
-                                        (object/raise ed :save))}
-                             {:label "ok"}]}))
-
-(defn set-syntax [ed new-syn]
+(defn- set-syntax [ed new-syn]
   (let [prev-info (-> @ed :info)]
     (when prev-info
       (object/remove-tags ed (:tags prev-info)))
@@ -172,25 +142,22 @@
     (editor/set-mode ed (:mime new-syn))
     (object/add-tags ed (:tags new-syn))))
 
-(defn set-syntax-by-path [ed path]
+(defn- set-syntax-by-path [ed path]
   (set-syntax ed (files/path->type path)))
 
 (behavior ::watched.delete
           :triggers #{:watched.delete}
           :reaction (fn [ws del]
-                      (if-let [ed (first (by-path del))]
-                        (do
-                          (warn-delete ed del)
-                          (make-transient-dirty ed)
-                          (when-let [ts (:lt.objs.tabs/tabset @ed)]
-                            (object/raise ts :tab.updated)))
-                        (let [open (filter #(if-let  [path (-> @% :info :path)]
-                                              (= 0 (.indexOf path (str del files/separator)))
-                                              false)
-                                           (object/by-tag :editor))]
-                          (doseq [ed open]
-                            (warn-delete ed del)
-                            (make-transient-dirty ed))))))
+                      (let [editors (or (seq (by-path del))
+                                        ;; If del is not a file, assume it's a directory
+                                        ;; and look for editors under it
+                                        (filter #(if-let  [path (-> @% :info :path)]
+                                                   (= 0 (.indexOf path (str del files/separator)))
+                                                   false)
+                                                (object/by-tag :editor)))]
+                        (doseq [ed editors]
+                          (when-not (:dirty @ed)
+                            (object/raise ed :close))))))
 
 (behavior ::watched.rename
           :triggers #{:watched.rename :rename}
@@ -210,7 +177,9 @@
                             (doc/move-doc old neue-path)
                             )))))
 
-(defn create [info]
+(defn create
+  "Create a :lt.objs.editor/editor object with given info map and add it to current pool"
+  [info]
   (let [ed (object/create :lt.objs.editor/editor info)]
     (object/add-tags ed (:tags info []))
     (object/merge! ed {:editor.generation (editor/->generation ed)})
@@ -225,10 +194,10 @@
                       (focus-last))})
 
 
-(def syntax-selector (cmd/filter-list {:items (fn []
-                                                (sort-by :name (-> @files/files-obj :types vals)))
-                                       :key :name
-                                       :placeholder "Syntax"}))
+(def ^:private syntax-selector (cmd/filter-list {:items (fn []
+                                                          (sort-by :name (-> @files/files-obj :types vals)))
+                                                 :key :name
+                                                 :placeholder "Syntax"}))
 
 (behavior ::set-syntax
           :triggers #{:select}
@@ -265,46 +234,31 @@
           :reaction (fn [this options]
                       (object/merge! this {::comment-options options})))
 
+(defn- do-commenting [commenting-fn]
+  (when-let [cur (last-active)]
+    (let [from (editor/->cursor cur "start")
+          to (if (editor/selection? cur)
+               (editor/->cursor cur "end")
+               from)
+          options (::comment-options @cur)]
+      (commenting-fn cur from to options))))
+
 (cmd/command {:command :comment-selection
               :desc "Editor: Comment line(s)"
-              :exec (fn []
-                      (when-let [cur (last-active)]
-                        (let [cursor (editor/->cursor cur "start")]
-                          (if (editor/selection? cur)
-                            (editor/line-comment cur cursor (editor/->cursor cur "end") (::comment-options @cur))
-                            (editor/line-comment cur cursor cursor (::comment-options @cur))))))})
+              :exec (partial do-commenting editor/line-comment)})
 
 (cmd/command {:command :block-comment-selection
               :desc "Editor: Block Comment line(s)"
-              :exec (fn []
-                      (when-let [cur (last-active)]
-                        (let [cursor (editor/->cursor cur "start")]
-                          (if (editor/selection? cur)
-                            (editor/block-comment cur cursor (editor/->cursor cur "end") (::comment-options @cur))
-                            (editor/block-comment cur cursor cursor (::comment-options @cur))))))})
+              :exec (partial do-commenting editor/block-comment)})
 
 
 (cmd/command {:command :uncomment-selection
               :desc "Editor: Uncomment line(s)"
-              :exec (fn []
-                      (when-let [cur (last-active)]
-                        (let [cursor (editor/->cursor cur "start")]
-                          (if (editor/selection? cur)
-                            (editor/uncomment cur cursor (editor/->cursor cur "end"))
-                            (editor/uncomment cur cursor cursor)))))})
+              :exec (partial do-commenting editor/uncomment)})
 
 (cmd/command {:command :toggle-comment-selection
               :desc "Editor: Toggle comment line(s)"
-              :exec (fn []
-                      (when-let [cur (last-active)]
-                        (let [cursor (editor/->cursor cur "start")
-                              [start end] (if (editor/selection? cur)
-                                            [cursor (editor/->cursor cur "end")]
-                                            [cursor cursor])]
-                          (when-not (editor/uncomment cur start end)
-                            (if-not (= (:line start) (:line end))
-                              (editor/block-comment cur cursor end (::comment-options @cur))
-                              (editor/line-comment cur cursor (editor/->cursor cur "end") (::comment-options @cur)))))))})
+              :exec (partial do-commenting editor/toggle-comment)})
 
 (cmd/command {:command :indent-selection
               :desc "Editor: Indent line(s)"

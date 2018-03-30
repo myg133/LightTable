@@ -28,6 +28,7 @@
 ;; TODO: get-proxy
 ;; (def get-proxy (.-App.getProxyForURL (js/require "nw.gui")))
 (def get-proxy)
+(def request-strict-ssl true)
 
 (defn tar-path [v]
   (if (cache/fetch :edge)
@@ -47,7 +48,7 @@
           (string/split " ")
           (second)))))
 
-(def version-timeout (* 5 60 1000))
+(def version-timeout (* 60 60 1000))
 (def version (get-versions))
 
 (defn str->version [s]
@@ -73,7 +74,8 @@
 
 (defn download-file [from to cb]
   (let [options (js-obj "url" from
-                        "headers" (js-obj "User-Agent" "Light Table"))
+                        "headers" (js-obj "User-Agent" "Light Table")
+                        "strictSSL" request-strict-ssl)
         out (.createWriteStream fs to)]
     (when-let [proxy (or js/process.env.http_proxy js/process.env.https_proxy)]
       (set! (.-proxy options) proxy))
@@ -131,11 +133,15 @@
 (defn ->latest-version
   "Returns latest LT version for github api tags endpoint."
   [body]
-  (->> (js/JSON.parse body)
-       ;; Ensure only version tags
-       (keep #(when (re-find version-regex (.-name %)) (.-name %)))
-       sort
-       last))
+  (when-let [parsed-body
+             (try (js/JSON.parse body)
+               (catch :default e
+                 (console/error (str "Invalid JSON response from " tags-url ": " (pr-str body)))))]
+    (->> parsed-body
+         ;; Ensure only version tags
+         (keep #(when (re-find version-regex (.-name %)) (.-name %)))
+         sort
+         last)))
 
 (defn check-version [& [notify?]]
   (fetch/xhr tags-url {}
@@ -196,5 +202,22 @@
                         (set! js/localStorage.fetchedVersion nil))
                       (check-version)
                       (every version-timeout check-version)))
+
+(behavior ::strict-ssl
+          :triggers #{:object.instant}
+          :type :user
+          :exclusive [::disable-strict-ssl]
+          :desc "Enables strict SSL certificate checking when downloading LT and LT plugin repos (default setting)"
+          :reaction (fn [this]
+                      (set! request-strict-ssl true)))
+
+(behavior ::disable-strict-ssl
+          :triggers #{:object.instant}
+          :type :user
+          :exclusive [::strict-ssl]
+          :desc "Disables strict SSL certificate checking when downloading LT and LT plugin repos"
+          :details "In some enterprise environments with SSL proxies strict certificate checking will fail due to MITM certificates used for monitoring SSL traffic. This option allows these network requests to succeed in such environments."
+          :reaction (fn [this]
+                      (set! request-strict-ssl false)))
 
 (object/tag-behaviors :app [::check-deploy])

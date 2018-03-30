@@ -3,13 +3,16 @@
  [:app "ctrl-space" :show-commandbar-transient]
  [:app "pmeta-shift-n" :window.new]
  [:app "pmeta-shift-o" :open-file]
- [:app "pmeta--" :window.zoom-out]
  [:app "pmeta-n" :new-file]
  [:app "ctrl-shift-d" :docs.search.show]
  [:app "pmeta-o" :navigate-workspace-transient]
+ [:app "pmeta--" :window.zoom-out]
+ [:app "pmeta-+" :window.zoom-in]
+ [:app "pmeta-=" :window.zoom-in]
  [:app "pmeta-shift-=" :window.zoom-in]
- [:app "pmeta-r" :refresh-connected-browser]
+ [:app "pmeta-0" :window.zoom-reset]
  [:app "f11" :window.fullscreen]
+ [:app "pmeta-r" :refresh-connected-browser]
 
  [:browser "pmeta-l" :browser.url-bar.focus]
 
@@ -21,7 +24,7 @@
  [:editor "ctrl-," :editor.unjump]
  [:editor "ctrl-." :editor.jump-to-definition-at-cursor]
  [:editor "pmeta-shift-s" :save-as]
- [:editor "pmeta-l" :goto-line]
+ [:editor "pmeta-l" :go-to-line]
  [:editor "pmeta-shift-enter" :eval-editor]
  [:editor "ctrl-=" :editor.fold-code]
  [:editor "pmeta-s" :save]
@@ -33,7 +36,7 @@
  [:editor.keys.normal "pmeta-f" :find.fill-selection :find.show]
  [:editor.keys.normal "pmeta-g" :find.next]
  [:editor.keys.normal "tab" :auto-complete]
- [:editor.keys.normal "backspace" :editor.backspace-pair :editor.backspace-indent]
+ [:editor.keys.normal "backspace" :passthrough :editor.backspace-indent]
 
  [:filter-list.input "down" (:filter-list.input.move-selection 1)]
  [:filter-list.input "esc" (:filter-list.input.escape! :force)]
@@ -73,7 +76,7 @@
 
  [:searcher.search "enter" :searcher.search]
 
- [:sidebar.clients "esc" :hide-connect]
+ [:sidebar.clients "esc" :show-connect]
 
  [:sidebar.doc.search.input "esc" :docs.search.hide]
  [:sidebar.doc.search.input "enter" :docs.search.exec]

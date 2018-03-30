@@ -9,6 +9,7 @@
             [lt.objs.popup :as popup]
             [lt.objs.sidebar :as sidebar]
             [lt.objs.dialogs :as dialogs]
+            [lt.objs.document :as document]
             [lt.objs.menu :as menu]
             [lt.util.dom :as dom]
             [lt.util.cljs :refer [->dottedkw]]
@@ -58,7 +59,11 @@
                       (object/merge! this {:open? true})
                       (when-not (:realized? @this)
                         (object/merge! this {:realized? true})
-                        (object/merge! this (files-and-folders (:path @this))))))
+                        (object/merge! this (files-and-folders (:path @this)))
+                        (let [folder (dom/$ :ul (object/->content this))
+                              width (dom/scroll-width folder)]
+                          (doseq [child (dom/children folder)]
+                            (dom/css child {:width width}))))))
 
 (behavior ::refresh
           :triggers #{:refresh!}
@@ -154,19 +159,16 @@
 (behavior ::on-drop
           :triggers #{:drop}
           :reaction (fn [this e]
-                      (try
-                        (let [size (.-dataTransfer.files.length e)]
-                          (loop [i 0]
-                            (when (< i size)
-                              (let [path (-> (.-dataTransfer.files e)
-                                             (aget i)
-                                             (.-path))]
-                                (if (files/dir? path)
-                                  (object/raise workspace/current-ws :add.folder! path)
-                                  (object/raise workspace/current-ws :add.file! path)))
-                              (recur (inc i)))))
-                        (catch js/Error e
-                          (println e)))))
+                      (let [size (.-dataTransfer.files.length e)]
+                        (loop [i 0]
+                          (when (< i size)
+                            (let [path (-> (.-dataTransfer.files e)
+                                           (aget i)
+                                           (.-path))]
+                              (if (files/dir? path)
+                                (object/raise workspace/current-ws :add.folder! path)
+                                (object/raise workspace/current-ws :add.file! path)))
+                            (recur (inc i)))))))
 
 (behavior ::on-menu
           :triggers #{:menu!}
@@ -289,7 +291,8 @@
                       (let [path (:path @this)
                             neue (files/join (files/parent path) n)]
                         (when-not (= path neue)
-                          (if (files/exists? neue)
+                          ;; In OSX rename is case-sensistive but exists check isn't
+                          (if (and (not= (string/lower-case path) (string/lower-case neue)) (files/exists? neue))
                             (popup/popup! {:header "Folder already exists."
                                            :body (str "The folder " neue " already exists, you'll have to pick a different name.")
                                            :buttons [{:label "ok"
@@ -300,6 +303,12 @@
                               (object/merge! this {:path neue :realized? false})
                               (files/move! path neue)
                               (object/raise this :refresh!)
+                              (let [docs (get-in @document/manager [:files])
+                                    old-path (string/join [path files/separator])
+                                    affected (filter (fn [x] (.startsWith x old-path)) (keys docs))]
+                                (doseq [old-fpath affected]
+                                  (let [new-fpath (string/replace-first old-fpath path neue)]
+                                    (document/move-doc old-fpath new-fpath))))
                               (if root?
                                 (object/raise workspace/current-ws :rename! path neue)
                                 (object/raise workspace/current-ws :watched.rename path neue))
@@ -311,7 +320,8 @@
                       (let [path (:path @this)
                             neue (files/join (files/parent path) n)]
                         (when-not (= path neue)
-                          (if (files/exists? neue)
+                          ;; In OSX rename is case-sensistive but exists check isn't
+                          (if (and (not= (string/lower-case path) (string/lower-case neue)) (files/exists? neue))
                             (popup/popup! {:header "File already exists."
                                            :body (str "The file" neue " already exists, you'll have to pick a different name.")
                                            :buttons [{:label "ok"
@@ -331,7 +341,9 @@
           :reaction (fn [this]
                       (object/merge! this {:renaming? true})
                       (let [input (dom/$ :input (object/->content this))
-                            len (count (files/without-ext (files/basename (:path @this))))]
+                            len (count (files/without-ext (files/basename (:path @this))))
+                            width (dom/scroll-width (dom/parent input))]
+                        (dom/css input {:width width})
                         (dom/focus input)
                         (dom/selection input 0 len "forward"))))
 

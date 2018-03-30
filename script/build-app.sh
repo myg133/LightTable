@@ -29,6 +29,11 @@ elif [ "$(expr substr $(uname -s) 1 9)" == "CYGWIN_NT" ]; then
   OS="windows"
   RESOURCES="resources"
   PLATFORM_DIR="deploy/platform/win"
+  
+elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW64_NT" ]; then
+  OS="windows"
+  RESOURCES="resources"
+  PLATFORM_DIR="deploy/platform/win"
 
 else
   echo "Cannot detect a supported OS."
@@ -100,6 +105,18 @@ elif [ "$OS" == "linux" ]; then
 elif [ "$OS" == "windows" ]; then
 
   mv $RELEASE_DIR/electron.exe $RELEASE_DIR/LightTable.exe
+  RCEDIT_PATH=`which rcedit` || { echo "expected to find rcedit; unable to rebrand the exe"; }
+  if [ "$RCEDIT_PATH" != "" ]; then
+    rcedit "$RELEASE_DIR/LightTable.exe" \
+      --set-icon deploy/core/img/lticon.ico \
+      --set-file-version "$VERSION" \
+      --set-product-version "$VERSION" \
+      --set-version-string "FileDescription" "Light Table" \
+      --set-version-string "ProductName" "Light Table" \
+      --set-version-string "CompanyName" "" \
+      --set-version-string "LegalCopyright" "" \
+      --set-version-string "OriginalFilename" ""
+  fi
 
 fi
 

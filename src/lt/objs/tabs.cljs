@@ -109,6 +109,10 @@
     (->name e)]
    (when (object/raise-reduce e :close-button+ false)
      (close-tab label))]
+  ;; Disable middle-click pasting in linux
+  :mouseup (fn [ev]
+             (when (or (= 1 (.-button ev)) (.-metaKey ev))
+               (dom/prevent ev)))
   :click (fn [ev]
            (if (or (= 1 (.-button ev)) (.-metaKey ev))
              (object/raise label :close)
@@ -387,9 +391,7 @@
                       (try
                         (let [orig (:active-obj @this)]
                           (object/raise orig :close))
-                        (catch js/Error e
-                          (js/lt.objs.console.error e))
-                        (catch js/global.Error e
+                        (catch :default e
                           (js/lt.objs.console.error e)))))
 
 (behavior ::on-destroy-objs

@@ -7,7 +7,6 @@
             [lt.objs.workspace :as workspace]
             [lt.objs.platform :as platform]
             [lt.objs.command :as cmd]
-            [lt.util.cljs :refer [js->clj]]
             [clojure.string :as string]
             [lt.util.ipc :as ipc]
             [lt.objs.opener :as opener])
@@ -24,7 +23,7 @@
         (do
           (object/raise opener/opener :open! path)
           (when line
-            (cmd/exec! :goto-line line))
+            (cmd/exec! :go-to-line line))
           (when add?
             (object/raise workspace/current-ws :add.file! path))))
       (object/raise opener/opener :new! path))))

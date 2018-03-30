@@ -22,10 +22,7 @@
   (when s
     (try
       (reader/read-string s)
-      (catch js/global.Error e
-        (console/error (str "Invalid settings file: " file "\n" e))
-        nil)
-      (catch js/Error e
+      (catch :default e
         (console/error (str "Invalid settings file: " file "\n" e))
         nil))))
 
@@ -163,10 +160,8 @@
     (do
       (try
         (object/refresh! (first objs))
-        (catch js/global.Error e
-          (.error js/console e))
-        (catch js/Error e
-          (.error js/console e)))
+        (catch :default e
+          (console/error e)))
       (js/process.nextTick (fn []
                              (refresh-all (next objs)))))))
 
@@ -506,6 +501,7 @@
           :type :user
           :triggers #{:keymap.diffs.user+}
           :reaction (fn [this diffs]
+                      (console/error (str "[:app " ::pair-keymap-diffs "] is deprecated and will be removed in 0.9.0. Use [:editor :lt.objs.editor/autoclose-brackets] instead"))
                       (concat diffs (list {:+ pair-keybindings}))))
 
 (behavior ::on-behaviors-editor-save

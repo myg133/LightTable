@@ -6,7 +6,6 @@
             [lt.objs.files :as files]
             [lt.objs.clients :as clients]
             [lt.util.load :as load]
-            [lt.util.cljs :refer [js->clj]]
             [clojure.string :as string])
   (:use [lt.util.js :only [wait ->clj]])
   (:require-macros [lt.macros :refer [behavior]]))
@@ -55,24 +54,23 @@
 
 (def server
   (try
-    (let [ ws (.listen io 0)]
+    (let [ ws (.listen io 5678)]
       (.set ws "log level" 1)
+      (.on (.-server ws) "error" #(do
+                                    (if (= (.-code %) "EADDRINUSE")
+                                      (do
+                                        (.log js/console "Default socket.io port already used. Retrying with a random port.")
+                                        (.listen (.-server ws) 0))
+                                      (throw %))))
       (.on (.-server ws) "listening" #(do
-                                        (set! port (.-port (.address (.-server ws))))
-                                        ))
+                                        (set! port (.-port (.address (.-server ws))))))
       (.add (aget ws "static") "/lighttable/ws.js" (clj->js {:file (files/lt-home "core/node_modules/lighttable/ws.js")}))
       (.on (.-sockets ws) "connection" on-connect)
       ws)
-    ;;TODO: warn the user that they're not connected to anything
-    (catch js/Error e
-      )
-    (catch js/global.Error e
-      )))
+    (catch :default e
+      (console/error "Error starting socket.io server" e))))
 
 (behavior ::kill-on-closed
-                  :triggers #{:closed}
-                  :reaction (fn [app]
-                              (try
-                                (.close server)
-                                (catch js/Error e)
-                                (catch js/global.Error e))))
+          :triggers #{:closed}
+          :reaction (fn [app]
+                      (.close server)))
