@@ -18,12 +18,16 @@
   "dependencies": {
     "codemirror": "^5.11.0",
     "optimist": "^0.5.2",
-    "request": "^2.81.0"
-  },
-  "forkedDependencies": {
+    "request": "^2.81.0",
+    "active-x-obfuscator": "^0.0.1",
     "replace": "^0.2.7",
     "socket.io": "^0.9.13",
     "shelljs": "^0.1.4",
-    "tar": "^0.1.19"
-  }
+    "tar": "^0.1.19",
+    "bencode": "^0.4.3",
+    "clojurescript": "^0.0.11",
+    "jodid25519": "^1.0.2",
+    "jsonify": "*"
+  },
+  "forkedDependencies": {}
 }

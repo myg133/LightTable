@@ -1,10 +1,11 @@
-/deploy/core/node_modules/
-/deploy/core/node_modules/lighttable/cljs/
-/deploy/core/node_modules/clojurescript/cljsDeps/
+/node_modules/
+/deploy/core/node_modules/*
+!/deploy/core/node_modules/lighttable/
+/deploy/core/node_modules/lighttable/cljs
+/deploy/core/node_modules/lighttable/bootstrap.js*
 /target/
 /deploy/plugins/
 .DS_Store
-/deploy/core/node_modules/lighttable/bootstrap.js*
 .lein-deps-sum
 .lein-env
 .lein-plugins/
@@ -13,4 +14,3 @@
 .idea
 *.iml
 *-lock.json
-node_modules/
