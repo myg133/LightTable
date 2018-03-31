@@ -25,6 +25,11 @@ pushd deploy/electron
   node_modules/.bin/grunt download-electron
 popd
 
+# Ensure we have current version of core
+pushd deploy/core
+  npm install
+popd
+
 # Build the core cljs
 
 # Workaround for #1025 windows bug
@@ -33,6 +38,12 @@ if [ "$(echo $(uname -s) | cut -c 1-9)" == "CYGWIN_NT" -o "$(echo $(uname -s) | 
 fi
 rm -f deploy/core/node_modules/lighttable/bootstrap.js
 lein cljsbuild once app
+
+if [ -d "deploy/core/node_modules/clojurescript" ]; then
+  rm -i -rf deploy/core/node_modules/clojurescript
+fi
+lein cljsbuild once cljsdeps
+
 
 # Fetch plugins
 PLUGINS=("Clojure,0.3.1" "CSS,0.0.6" "HTML,0.1.0" "Javascript,0.2.0"

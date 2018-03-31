@@ -25,7 +25,6 @@
     "shelljs": "^0.1.4",
     "tar": "^0.1.19",
     "bencode": "^0.4.3",
-    "clojurescript": "^0.0.11",
     "jodid25519": "^1.0.2",
     "jsonify": "*"
   },
