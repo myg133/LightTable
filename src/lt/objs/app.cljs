@@ -11,9 +11,9 @@
             [lt.util.ipc :as ipc])
   (:require-macros [lt.macros :refer [behavior]]))
 
-(def remote (js/require "remote"))
+(def remote (.-remote (js/require "electron")))
 (def win (.getCurrentWindow remote))
-(def frame (js/require "web-frame"))
+(def frame (.-webFrame (js/require "electron")))
 (def closing true)
 (def default-zoom 1)
 
@@ -225,8 +225,15 @@
 
 (def app (object/create ::app))
 
+
+(defn raiseapp 
+  ([k]
+    (object/raise app (keyword k)))
+  ([_ k]
+    (object/raise app (keyword k))))
+
 ;; Handles events e.g. focus, blur and close
-(ipc/on "app" #(object/raise app (keyword %)))
+(ipc/on "app" raiseapp)
 
 
 ;;*********************************************************

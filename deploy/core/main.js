@@ -1,23 +1,23 @@
 "use strict";
 
-var app = require('app'),  // Module to control application life.
-    BrowserWindow = require('browser-window'),  // Module to create native browser window.
-    ipc = require("ipc"),
-    optimist = require('optimist');
+const {app, BrowserWindow, ipcMain} = require('electron')
+
+let optimist = require('optimist');
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the javascript object is GCed.
-var windows = {};
+let windows = {};
 global.browserOpenFiles = []; // Track files for open-file event
 
-var packageJSON = require(__dirname + '/package.json');
+let packageJSON = require(__dirname + '/package.json');
 
 // Returns Window object
 function createWindow() {
-  var browserWindowOptions = packageJSON.browserWindowOptions;
+  let browserWindowOptions = packageJSON.browserWindowOptions;
   browserWindowOptions.icon = __dirname + '/' + browserWindowOptions.icon;
-  var window = new BrowserWindow(browserWindowOptions);
+  let window = new BrowserWindow(browserWindowOptions);
   windows[window.id] = window;
+  window.webContents.openDevTools();
   window.focus();
   window.webContents.on("will-navigate", function(e) {
       e.preventDefault();
@@ -49,7 +49,7 @@ function createWindow() {
   });
 
   // and load the index.html of the app.
-  window.loadUrl('file://' + __dirname + '/LightTable.html?id=' + window.id);
+  window.loadURL('file://' + __dirname + '/LightTable.html?id=' + window.id);
 
   // Notify LT that the user requested to close the window/app
   window.on("close", function(evt) {
@@ -66,18 +66,18 @@ function createWindow() {
 };
 
 function onReady() {
-  ipc.on("createWindow", function(event, info) {
+  ipcMain.on("createWindow", function(event, info) {
     createWindow();
   });
 
-  ipc.on("initWindow", function(event, id) {
+  ipcMain.on("initWindow", function(event, id) {
     // Moving this to createWindow() causes js loading issues
     windows[id].on("focus", function() {
       windows[id].webContents.send("app", "focus");
     });
   });
 
-  ipc.on("toggleDevTools", function(event, windowId) {
+  ipcMain.on("toggleDevTools", function(event, windowId) {
     if(windowId && windows[windowId]) {
       windows[windowId].toggleDevTools();
     }
@@ -133,24 +133,24 @@ function start() {
   parseArgs();
 };
 
-// Set $IPC_DEBUG to debug incoming and outgoing ipc messages for the main process
-if (process.env["IPC_DEBUG"]) {
-  var oldOn = ipc.on;
-  ipc.on = function (channel, cb) {
-    oldOn.call(ipc, channel, function() {
+// Set $ipc_DEBUG to debug incoming and outgoing ipcMain messages for the main process
+if (process.env["ipc_DEBUG"]) {
+  let oldOn = ipcMain.on;
+  ipcMain.on = function (channel, cb) {
+    oldOn.call(ipcMain, channel, function() {
       console.log("\t\t\t\t\t->MAIN", channel, Array.prototype.slice.call(arguments).join(', '));
       cb.apply(null, arguments);
     });
   };
-  var logSend = function (window) {
-    var oldSend = window.webContents.send;
+  let logSend = function (window) {
+    let oldSend = window.webContents.send;
     window.webContents.send = function () {
       console.log("\t\t\t\t\tMAIN->", Array.prototype.slice.call(arguments).join(', '));
       oldSend.apply(window.webContents, arguments);
     };
   };
-  var oldCreateWindow = createWindow;
-  var createWindow = function() { logSend(oldCreateWindow()); };
+  let oldCreateWindow = createWindow;
+  createWindow = function() { logSend(oldCreateWindow()); };
 }
 
 start();
