@@ -225,15 +225,8 @@
 
 (def app (object/create ::app))
 
-
-(defn raiseapp 
-  ([k]
-    (object/raise app (keyword k)))
-  ([_ k]
-    (object/raise app (keyword k))))
-
 ;; Handles events e.g. focus, blur and close
-(ipc/on "app" raiseapp)
+(ipc/on "app" #(object/raise app (keyword %)))
 
 
 ;;*********************************************************
