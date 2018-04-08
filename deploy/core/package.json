@@ -1,7 +1,7 @@
 {
   "name": "LightTable",
   "description": "LightTable Electron App",
-  "version": "0.8.1",
+  "version": "1.0.0",
   "main": "main.js",
   "browserWindowOptions": {
     "icon": "img/lticon.png",
@@ -23,7 +23,7 @@
     "replace": "^0.2.7",
     "socket.io": "^0.9.13",
     "shelljs": "^0.1.4",
-    "tar": "^0.1.19",
+    "tar": "^4.4.1",
     "bencode": "^0.4.3",
     "jodid25519": "^1.0.2",
     "jsonify": "*"
