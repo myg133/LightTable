@@ -13,6 +13,7 @@
   (:require-macros [lt.macros :refer [behavior]]))
 
 (def remote (js/require "remote"))
+;; (def remote (.-remote (js/require "electron")))
 
 (defn open-paths [path-line-pairs add?]
   (doseq [[path line] path-line-pairs
