@@ -17,7 +17,8 @@ function createWindow() {
   browserWindowOptions.icon = __dirname + '/' + browserWindowOptions.icon;
   let window = new BrowserWindow(browserWindowOptions);
   windows[window.id] = window;
-  window.webContents.openDevTools();
+  // open debug 
+  // window.webContents.openDevTools();
   window.focus();
   window.webContents.on("will-navigate", function(e) {
       e.preventDefault();
