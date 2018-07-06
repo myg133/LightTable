@@ -5,7 +5,8 @@
             [lt.objs.app :as app])
   (:require-macros [lt.macros :refer [behavior defui]]))
 
-(def dialog (.-dialog (js/require "electron")))
+(def remote (.-remote (js/require "electron")))
+(def dialog (.-dialog remote))
 
 (defn dir [obj event]
   (let [files (.showOpenDialog dialog app/win #js {:properties #js ["openDirectory" "multiSelections"]})]

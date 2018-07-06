@@ -93,6 +93,35 @@
      ~@body)))
 
 (defmacro background
+ [func]
+ `(lt.objs.thread/thread*
+   (fn ~(gensym "tfun") []
+     (let [orig# (js/argsArray (cljs.core/js-arguments))
+           msg# (.shift orig#)
+           args# (.map orig# cljs.reader/read-string)
+           ;; Seems this could be removed?
+           ~'raise (fn [obj# k# v#]
+                     (js/_send obj# k# (pr-str v#) "clj"))]
+       (.apply ~func nil (cljs.core/to-array (cons (.-obj msg#) args#)))))))
+
+(defmacro background_debug
+ [func]
+ `(lt.objs.thread/thread*
+   (fn ~(gensym "tfun") []
+     (.log js/console "BACKGROUND:")
+     (.log js/console "ARGS:" (cljs.core/js-arguments))
+     (.log js/console "ARR:" (js/argsArray (cljs.core/js-arguments)))
+     (let [orig# (js/argsArray (cljs.core/js-arguments))
+           msg# (.shift orig#)
+           args# (.map orig# cljs.reader/read-string)
+           ;; Seems this could be removed?
+           ~'raise (fn [obj# k# v#]
+                     (js/_send obj# k# (pr-str v#) "clj"))]
+       (.log js/console "MAPARG:" (pr-str (cons (.-obj msg#) args#)) (pr-str args#))
+       (.log js/console "MAPARG2:" (pr-str (cljs.core/to-array (cons (.-obj msg#) args#))) (pr-str args#))
+       (.apply ~func nil (cljs.core/to-array (cons (.-obj msg#) args#)))))))
+
+(defmacro background_old
   "Register given func to run on background thread"
   [func]
   `(lt.objs.thread/thread*
@@ -104,6 +133,16 @@
                      (js/_send obj# k# (pr-str v#) "clj"))]
         (.unshift args# (.-obj msg#))
         (.apply ~func nil args#)))))
+
+(defmacro background_bck
+  "Register given func to run on background thread"
+  [func]
+  `(lt.objs.thread/thread*
+    (fn ~(gensym "tfun") [msg# & body#]
+      (let [args# (map cljs.reader/read-string body#)
+            ~'raise (fn [obj# k# v#]
+                     (js/_send obj# k# (pr-str v#) "clj"))]
+        (.apply ~func nil `(clj->js (cons (.-obj msg#) args#)))))))
 
 (defmacro ^:private aloop [[var arr] & body]
   `(let [arr# ~arr]

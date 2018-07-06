@@ -21,7 +21,7 @@
   (:require-macros [lt.macros :refer [behavior defui extract foreach background]]))
 
 (def search! (background (fn [obj-id opts]
-                           (let [replacer (js/require (str js/ltpath "/core/node_modules/replace"))
+                           (let [replacer (js/require (str js/ltpath "/core/customer_modules/replace"))
                                  search (if-let [pattern (re-seq #"^/(.+)/$" (:search opts))]
                                           (js/RegExp. (-> pattern first second))
                                           (:search opts))
