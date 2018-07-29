@@ -668,8 +668,7 @@
                 (-> plugin-edn-body
                     ;; Until clojurescript gets pprint
                     ;; one key/val pair or parent key per line for diffing
-                    (string/replace #"(\"\s*,|\{|\},)" #(str % "\n"))
-                    (string/replace-first #"^\{\n" "{")
+                    (string/replace #"(\"\s*,|\{|\},)" "$1\n")
                     (string/replace-first #":dependencies"
                                           ";; Do not edit - :dependencies are auto-generated\n:dependencies")))))
 

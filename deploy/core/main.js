@@ -17,7 +17,7 @@ function createWindow() {
   browserWindowOptions.icon = __dirname + '/' + browserWindowOptions.icon;
   let window = new BrowserWindow(browserWindowOptions);
   windows[window.id] = window;
-  // open debug 
+  // open debug
   // window.webContents.openDevTools();
   window.focus();
   window.webContents.on("will-navigate", function(e) {
@@ -134,8 +134,8 @@ function start() {
   parseArgs();
 };
 
-// Set $ipc_DEBUG to debug incoming and outgoing ipcMain messages for the main process
-if (process.env["ipc_DEBUG"]) {
+// Set $IPC_DEBUG to debug incoming and outgoing ipcMain messages for the main process
+if (process.env["IPC_DEBUG"]) {
   let oldOn = ipcMain.on;
   ipcMain.on = function (channel, cb) {
     oldOn.call(ipcMain, channel, function() {
